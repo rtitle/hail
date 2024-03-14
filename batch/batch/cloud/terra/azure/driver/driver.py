@@ -149,7 +149,13 @@ write_files:
          $(lsb_release -cs) \
          stable"
 
-      apt-get install -y docker-ce
+      retry() {{
+          "$@" ||
+              (sleep 2 && "$@") ||
+              (sleep 5 && "$@");
+      }}
+
+      retry apt-get install -y docker-ce
 
       curl -sL https://aka.ms/InstallAzureCLIDeb | sudo bash
 
@@ -161,9 +167,10 @@ write_files:
       UNRESERVED_WORKER_DATA_DISK_SIZE_GB=50
       ACCEPTABLE_QUERY_JAR_URL_PREFIX={ shq(ACCEPTABLE_QUERY_JAR_URL_PREFIX) }
 
-      sudo mkdir -p /host/batch
-      sudo mkdir -p /host/logs
-      sudo mkdir -p /host/cloudfuse
+      sudo mkdir -p /host
+      sudo mkdir -p /batch/jvm-container-logs
+      sudo mkdir -p /logs
+      sudo mkdir -p /cloudfuse
 
       sudo mkdir -p /etc/netns
 
