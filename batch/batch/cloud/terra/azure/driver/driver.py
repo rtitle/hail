@@ -16,7 +16,7 @@ from hailtop.aiocloud.aioazure import AzurePricingClient
 from hailtop.aiocloud.aioterra.azure import TerraClient
 from hailtop.config import get_deploy_config
 from hailtop.config.deploy_config import TerraDeployConfig
-from hailtop.utils import parse_timestamp_msecs, periodically_call, secret_alnum_string
+from hailtop.utils import parse_timestamp_msecs, periodically_call
 
 from .....batch_configuration import DOCKER_PREFIX, INTERNAL_GATEWAY_IP
 from .....driver.driver import CloudDriver
@@ -244,6 +244,7 @@ write_files:
       -v /batch:/batch:shared \
       -v /logs:/logs \
       -v /global-config:/global-config \
+      -v /deploy-config:/deploy-config \
       -v /cloudfuse:/cloudfuse:shared \
       -v /etc/netns:/etc/netns \
       -v /sys/fs/cgroup:/sys/fs/cgroup \
@@ -287,7 +288,7 @@ runcmd:
             },
             'vmUser': {
                 'name': 'hail-admin',
-                'password': secret_alnum_string(),
+                'password': 'SuperStrongPassword1',
             },
             'ephemeralOSDisk': 'NONE',
             'customData': encoded_startup_script,
