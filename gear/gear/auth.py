@@ -158,7 +158,7 @@ class TrustedSingleTenantAuthenticator(Authenticator):
             UserData,
             {
                 'is_developer': True,
-                'username': 'user',
+                'username': 'test-dev',
                 'hail_credentials_secret_name': 'dummy',
                 'tokens_secret_name': 'dummy',
             },

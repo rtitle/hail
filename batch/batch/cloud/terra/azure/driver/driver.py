@@ -144,16 +144,16 @@ write_files:
            --show-error \
            https://download.docker.com/linux/ubuntu/gpg | apt-key add -
 
-      add-apt-repository \
-         "deb [arch=amd64] https://download.docker.com/linux/ubuntu \
-         $(lsb_release -cs) \
-         stable"
-
       retry() {{
           "$@" ||
               (sleep 2 && "$@") ||
               (sleep 5 && "$@");
       }}
+
+      retry add-apt-repository \
+         "deb [arch=amd64] https://download.docker.com/linux/ubuntu \
+         $(lsb_release -cs) \
+         stable"
 
       retry apt-get install -y docker-ce
 
@@ -168,7 +168,8 @@ write_files:
       ACCEPTABLE_QUERY_JAR_URL_PREFIX={ shq(ACCEPTABLE_QUERY_JAR_URL_PREFIX) }
 
       sudo mkdir -p /host
-      sudo mkdir -p /batch/jvm-container-logs
+      sudo mkdir -p /host/batch/jvm-container-logs
+      sudo ln -s /host/batch /batch
       sudo mkdir -p /logs
       sudo mkdir -p /cloudfuse
 
@@ -236,6 +237,7 @@ write_files:
       -e INTERNAL_GATEWAY_IP=$INTERNAL_GATEWAY_IP \
       -e DOCKER_PREFIX=$DOCKER_PREFIX \
       -e HAIL_TERRA=true \
+      -e HAIL_IDENTITY_PROVIDER_JSON='{{"idp": "Microsoft"}}' \
       -e WORKSPACE_STORAGE_CONTAINER_ID=$WORKSPACE_STORAGE_CONTAINER_ID \
       -e WORKSPACE_STORAGE_CONTAINER_URL=$WORKSPACE_STORAGE_CONTAINER_URL \
       -e TERRA_STORAGE_ACCOUNT=$TERRA_STORAGE_ACCOUNT \
@@ -247,7 +249,6 @@ write_files:
       -v /var/run/docker.sock:/var/run/docker.sock \
       -v /var/run/netns:/var/run/netns:shared \
       -v /usr/bin/docker:/usr/bin/docker \
-      -v /usr/sbin/xfs_quota:/usr/sbin/xfs_quota \
       -v /batch:/batch:shared \
       -v /logs:/logs \
       -v /global-config:/global-config \
@@ -334,8 +335,10 @@ class TerraAzureResourceManager(CloudResourceManager):
             raise
 
     async def get_vm_state(self, instance: Instance) -> VMState:
+        assert isinstance(instance.instance_config, TerraAzureSlimInstanceConfig)
+        resource_id = instance.instance_config._resource_id
         try:
-            spec = await self.terra_client.get(f'/vm/create-result/{instance.name[32:]}')
+            spec = await self.terra_client.get(f'/vm/{resource_id}')
             state = spec['metadata']['state']
             if state == 'CREATING':
                 return VMStateCreating(spec, instance.time_created)

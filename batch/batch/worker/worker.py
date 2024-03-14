@@ -55,7 +55,6 @@ from hailtop.utils import (
     blocking_to_async,
     check_exec_output,
     check_shell,
-    check_shell_output,
     dump_all_stacktraces,
     find_spark_home,
     is_delayed_warning_error,
@@ -1899,13 +1898,6 @@ class DockerJob(Job):
                 else:
                     data_disk_storage_in_bytes = storage_gib_to_bytes(self.data_disk_storage_in_gib)
 
-                with self.step('configuring xfsquota'):
-                    # Quota will not be applied to `/io` if the job has an attached disk mounted there
-                    await check_shell_output(f'xfs_quota -x -c "project -s -p {self.scratch} {self.project_id}" /host/')
-                    await check_shell_output(
-                        f'xfs_quota -x -c "limit -p bsoft={data_disk_storage_in_bytes} bhard={data_disk_storage_in_bytes} {self.project_id}" /host/'
-                    )
-
                 with self.step('populating secrets'):
                     if self.secrets:
                         for secret in self.secrets:
@@ -1914,10 +1906,6 @@ class DockerJob(Job):
                 with self.step('adding cloudfuse support'):
                     if self.cloudfuse:
                         os.makedirs(self.cloudfuse_base_path())
-
-                        await check_shell_output(
-                            f'xfs_quota -x -c "project -s -p {self.cloudfuse_base_path()} {self.project_id}" /host/'
-                        )
 
                         assert CLOUD_WORKER_API
                         for config in self.cloudfuse:
@@ -2028,14 +2016,6 @@ class DockerJob(Job):
             output = f.read()
             if self.cloudfuse_base_path() in output:
                 raise IncompleteCloudFuseCleanup(f'incomplete cloudfuse unmounting: {output}')
-
-        try:
-            async with async_timeout.timeout(120):
-                await check_shell(f'xfs_quota -x -c "limit -p bsoft=0 bhard=0 {self.project_id}" /host')
-        except asyncio.CancelledError:
-            raise
-        except Exception:
-            log.exception(f'while resetting xfs_quota project {self.project_id} for job {self.id}')
 
         try:
             async with async_timeout.timeout(120):
@@ -2222,17 +2202,8 @@ class JVMJob(Job):
 
                 self.state = 'initializing'
 
-                await check_shell_output(f'xfs_quota -x -c "project -s -p {self.scratch} {self.project_id}" /host/')
-                await check_shell_output(
-                    f'xfs_quota -x -c "limit -p bsoft={self.data_disk_storage_in_gib} bhard={self.data_disk_storage_in_gib} {self.project_id}" /host/'
-                )
-
                 with self.step('adding cloudfuse support'):
                     if self.cloudfuse:
-                        await check_shell_output(
-                            f'xfs_quota -x -c "project -s -p {self.cloudfuse_base_path()} {self.project_id}" /host/'
-                        )
-
                         assert CLOUD_WORKER_API
                         for config in self.cloudfuse:
                             bucket = config['bucket']
@@ -2373,7 +2344,6 @@ class JVMJob(Job):
             self.jvm = None
 
         try:
-            await check_shell(f'xfs_quota -x -c "limit -p bsoft=0 bhard=0 {self.project_id}" /host')
             await blocking_to_async(self.pool, shutil.rmtree, self.scratch, ignore_errors=True)
         except asyncio.CancelledError:
             raise
