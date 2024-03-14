@@ -8,10 +8,10 @@ TERRA_BATCH_WORKER_IMAGE := terradevacrpublic.azurecr.io/hail/batch-worker:$(TOK
 TERRA_IMAGES = pushed-terra-batch-image pushed-terra-batch-worker-image
 
 terra-batch-image:
-	$(MAKE) -C ../.. terra-batch-image CLOUD=azure IMAGE_NAME=$(TERRA_BATCH_IMAGE)
+	$(MAKE) -C ../.. terra-batch-image IMAGE_NAME=$(TERRA_BATCH_IMAGE)
 
 terra-batch-worker-image:
-	$(MAKE) -C ../.. terra-batch-worker-image IMAGE_NAME=$(TERRA_BATCH_WORKER_IMAGE)
+	$(MAKE) -C ../.. terra-batch-worker-image IMAGE_NAME=$(TERRA_BATCH_WORKER_IMAGE) CLOUD=azure
 
 terra-acr-login:
 	# ACR login is short-lived. Log in again if it's been more than an hour
