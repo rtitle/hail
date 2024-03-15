@@ -125,7 +125,7 @@ object Worker {
     timer.start(s"Job $i/$n")
 
     timer.start("readInputs")
-    val fs = FS.cloudSpecificFS(s"$scratchDir/secrets/gsa-key/key.json", None)
+    val fs = FS.cloudSpecificFS(None)
 
     def open(x: String): SeekableDataInputStream =
       fs.openNoCompression(x)

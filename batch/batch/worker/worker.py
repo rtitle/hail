@@ -1164,10 +1164,10 @@ class Container:
                 'rootfsPropagation': 'slave',
                 'namespaces': [
                     {'type': 'pid'},
-                    {
-                        'type': 'network',
-                        'path': f'/var/run/netns/{self.netns.network_ns_name}',
-                    },
+                    # {
+                    #     'type': 'network',
+                    #     'path': f'/var/run/netns/{self.netns.network_ns_name}',
+                    # },
                     {'type': 'mount'},
                     {'type': 'ipc'},
                     {'type': 'uts'},

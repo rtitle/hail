@@ -47,7 +47,7 @@ class TerraAzureStorageFS extends AzureStorageFS() {
       case Some((sasTokenUrl, expiration))
           if expiration > System.currentTimeMillis + TEN_MINUTES_IN_MS => sasTokenUrl
       case None =>
-        val (sasTokenUrl, expiration) = createTerraSasToken()
+        val (sasTokenUrl, expiration) = createTerraSasToken(url)
         sasTokenCache += (url.base -> (sasTokenUrl -> expiration))
         sasTokenUrl
     }
@@ -56,16 +56,16 @@ class TerraAzureStorageFS extends AzureStorageFS() {
   private def blobInWorkspaceStorageContainer(url: URL): Boolean =
     storageContainerUrl.account == url.account && storageContainerUrl.container == url.container
 
-  private def createTerraSasToken(): (URL, Long) = {
+  private def createTerraSasToken(url: URL): (URL, Long) = {
     implicit val formats: Formats = DefaultFormats
 
     val context = new TokenRequestContext()
     context.addScopes("https://management.azure.com/.default")
     val token = credential.getToken(context).block().getToken()
 
-    val url =
+    val wsmUrl =
       s"$workspaceManagerUrl/api/workspaces/v1/$workspaceId/resources/controlled/azure/storageContainer/$containerResourceId/getSasToken"
-    val req = new HttpPost(url)
+    val req = new HttpPost(wsmUrl)
     req.addHeader("Authorization", s"Bearer $token")
 
     val tenHoursInSeconds = 10 * 3600
@@ -76,12 +76,12 @@ class TerraAzureStorageFS extends AzureStorageFS() {
       .build()
     req.setURI(uri)
 
-    val sasTokenUrl = using(httpClient.execute(req)) { resp =>
+    val sasToken = using(httpClient.execute(req)) { resp =>
       val json = JsonMethods.parse(new String(EntityUtils.toString(resp.getEntity)))
       log.info(s"Created sas token client for $containerResourceId")
-      (json \ "url").extract[String]
+      (json \ "token").extract[String]
     }
 
-    (parseUrl(sasTokenUrl), expiration)
+    (url.withSasToken(sasToken), expiration)
   }
 }

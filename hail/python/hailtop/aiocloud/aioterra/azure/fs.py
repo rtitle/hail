@@ -45,11 +45,11 @@ class TerraAzureAsyncFS(AzureAsyncFS):
         expiration = time_msecs() + an_hour_in_seconds * 1000
 
         assert WORKSPACE_STORAGE_CONTAINER_ID is not None
-        sas_token = await self._terra_client.get_storage_container_sas_token(
+        token = await self._terra_client.get_storage_container_sas_token(
             WORKSPACE_STORAGE_CONTAINER_ID, url.path, expires_after=an_hour_in_seconds
         )
 
-        return AzureAsyncFS.parse_url(sas_token), expiration
+        return url.with_query(token), expiration
 
     def _in_workspace_container(self, url: AzureAsyncFSURL) -> bool:
         return url.account == self._workspace_container.account and url.container == self._workspace_container.container

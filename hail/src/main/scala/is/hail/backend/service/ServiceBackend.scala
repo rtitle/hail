@@ -64,7 +64,7 @@ object ServiceBackend {
 
     val flags = HailFeatureFlags.fromMap(rpcConfig.flags)
     val shouldProfile = flags.get("profile") != null
-    val fs = FS.cloudSpecificFS(s"$scratchDir/secrets/gsa-key/key.json", Some(flags))
+    val fs = FS.cloudSpecificFS(Some(flags))
 
     val backendContext = new ServiceBackendContext(
       rpcConfig.billing_project,
@@ -223,7 +223,6 @@ class ServiceBackend(
         "attributes" -> JObject(
           "name" -> JString(s"${name}_stage${stageCount}_${stageIdentifier}_job$i")
         ),
-        "mount_tokens" -> JBool(true),
         "resources" -> resources,
         "regions" -> JArray(backendContext.regions.map(JString).toList),
         "cloudfuse" -> JArray(backendContext.cloudfuseConfig.map { config =>
@@ -455,14 +454,14 @@ object ServiceBackendAPI {
     val inputURL = argv(5)
     val outputURL = argv(6)
 
-    val fs = FS.cloudSpecificFS(s"$scratchDir/secrets/gsa-key/key.json", None)
+    val fs = FS.cloudSpecificFS(None)
     val deployConfig = DeployConfig.fromConfigFile(
       s"$scratchDir/secrets/deploy-config/deploy-config.json"
     )
     DeployConfig.set(deployConfig)
     sys.env.get("HAIL_SSL_CONFIG_DIR").foreach(tls.setSSLConfigFromDir(_))
 
-    val batchClient = new BatchClient(s"$scratchDir/secrets/gsa-key/key.json")
+    val batchClient = new BatchClient()
     log.info("BatchClient allocated.")
 
     val batchId =
