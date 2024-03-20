@@ -1,5 +1,6 @@
 package is.hail.io.fs
 
+import is.hail.services.ClientResponseException
 import is.hail.shadedazure.com.azure.core.credential.TokenRequestContext
 import is.hail.shadedazure.com.azure.identity.{
   DefaultAzureCredential, DefaultAzureCredentialBuilder,
@@ -77,6 +78,16 @@ class TerraAzureStorageFS extends AzureStorageFS() {
     req.setURI(uri)
 
     val sasToken = using(httpClient.execute(req)) { resp =>
+      val statusCode = resp.getStatusLine.getStatusCode
+      if (statusCode < 200 || statusCode >= 300) {
+        val entity = resp.getEntity
+        val message =
+          if (entity != null)
+            EntityUtils.toString(entity)
+          else
+            null
+        throw new ClientResponseException(statusCode, message)
+      }
       val json = JsonMethods.parse(new String(EntityUtils.toString(resp.getEntity)))
       log.info(s"Created sas token client for $containerResourceId")
       (json \ "token").extract[String]
