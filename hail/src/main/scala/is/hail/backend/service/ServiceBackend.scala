@@ -275,6 +275,8 @@ class ServiceBackend(
       val shortMessage = readString(is)
       val expandedMessage = readString(is)
       val errorId = is.readInt()
+      logger.info(s"XXX Result file:$root/result.$i")
+      logger.info(s"XXX Error message: $shortMessage")
       throw new HailWorkerException(i, shortMessage, expandedMessage, errorId)
     }
   }
