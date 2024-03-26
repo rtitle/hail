@@ -23,7 +23,7 @@ python3 -m ipykernel install
 spark_monitor_gs=https://storage.googleapis.com/hail-common/sparkmonitor-3357488112c6c162c12f8386faaadcbf3789ac02/sparkmonitor-0.0.12-py3-none-any.whl
 curl -LO $spark_monitor_gs
 python3 -m pip install $(basename $spark_monitor_gs) widgetsnbextension
-jupyter serverextension enable --user --py sparkmonitor
+jupyter server extension enable --user --py sparkmonitor
 jupyter nbextension install --user --py sparkmonitor
 jupyter nbextension enable --user --py sparkmonitor
 jupyter nbextension enable --user --py widgetsnbextension
