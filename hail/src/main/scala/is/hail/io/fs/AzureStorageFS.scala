@@ -304,10 +304,15 @@ class AzureStorageFS(val credentialsJSON: Option[String] = None) extends FS {
 
       override def close(): Unit = {
         if (!closed) {
-          flush()
-          blobOutputStream.flush()
-          blobOutputStream.close()
-          closed = true
+            flush()
+            //blobOutputStream.flush()
+            try {
+              blobOutputStream.close()
+            } catch {
+              case e => 
+                log.warn(s"XXX Got execption closing stream: $e")
+            }
+            closed = true
         }
       }
     }

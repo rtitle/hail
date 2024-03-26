@@ -18,6 +18,7 @@ import is.hail.types.physical.stypes.interfaces.SBaseStructValue
 import is.hail.types.virtual.Type
 import is.hail.utils._
 import is.hail.utils.richUtils.ByteTrackingOutputStream
+import is.hail.services.retryTransientErrors
 
 import java.io.OutputStream
 
@@ -250,7 +251,9 @@ class IndexWriterUtils(path: String, fs: FS, meta: StagedIndexMetadata) {
   def os: OutputStream = trackedOS
 
   def writeMetadata(height: Int, rootOffset: Long, nKeys: Long): Unit =
-    using(fs.create(metadataPath))(os => meta.serialize(os, height, rootOffset, nKeys))
+    retryTransientErrors {
+      using(fs.create(metadataPath))(os => meta.serialize(os, height, rootOffset, nKeys))
+    }
 
   val rBuilder = new BoxedArrayBuilder[Region]()
   val aBuilder = new LongArrayBuilder()

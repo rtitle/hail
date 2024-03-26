@@ -1,5 +1,6 @@
 package is.hail
 
+import is.hail.shadedazure.com.azure.identity.CredentialUnavailableException
 import is.hail.shadedazure.com.azure.storage.common.implementation.Constants
 import is.hail.utils._
 
@@ -15,6 +16,7 @@ import javax.net.ssl.SSLException
 import org.apache.http.{ConnectionClosedException, NoHttpResponseException}
 import org.apache.http.conn.HttpHostConnectException
 import org.apache.log4j.{LogManager, Logger}
+import org.apache.commons.lang3.exception.ExceptionUtils
 
 package object services {
   private lazy val log: Logger = LogManager.getLogger("is.hail.services")
@@ -174,8 +176,14 @@ package object services {
       case e @ (_: SSLException | _: StorageException | _: IOException)
           if e.getCause != null && NettyProxy.isRetryableNettyIOException(e.getCause) =>
         true
+      case e: CredentialUnavailableException =>
+        true
       case e =>
+        log.info(s"XXX exception: $e")
         val cause = e.getCause
+        log.info(s"XXX cause: $cause")
+        val st = ExceptionUtils.getStackTrace(e)
+        log.info(s"XXX stack trace: $st")
         cause != null && isTransientError(cause)
     }
   }

@@ -1,6 +1,6 @@
 package is.hail.io.fs
 
-import is.hail.services.ClientResponseException
+import is.hail.services._
 import is.hail.shadedazure.com.azure.core.credential.TokenRequestContext
 import is.hail.shadedazure.com.azure.identity.{
   DefaultAzureCredential, DefaultAzureCredentialBuilder,
@@ -10,6 +10,7 @@ import is.hail.utils._
 
 import scala.collection.mutable
 
+import org.apache.http.client.config.RequestConfig
 import org.apache.http.client.methods.HttpPost
 import org.apache.http.client.utils.URIBuilder
 import org.apache.http.impl.client.HttpClients
@@ -26,7 +27,14 @@ object TerraAzureStorageFS {
 class TerraAzureStorageFS extends AzureStorageFS() {
   import TerraAzureStorageFS.{log, TEN_MINUTES_IN_MS}
 
-  private[this] val httpClient = HttpClients.custom().build()
+  private[this] val timeout = 30
+  private[this] val requestConfig = RequestConfig.custom()
+    .setConnectTimeout(timeout * 1000)
+    .setSocketTimeout(timeout * 1000)
+    .build()
+  private[this] val httpClient = HttpClients.custom()
+    .setDefaultRequestConfig(requestConfig)
+    .build()
   private[this] val sasTokenCache = mutable.Map[String, (URL, Long)]()
 
   private[this] val workspaceManagerUrl = sys.env("WORKSPACE_MANAGER_URL")
@@ -62,7 +70,9 @@ class TerraAzureStorageFS extends AzureStorageFS() {
 
     val context = new TokenRequestContext()
     context.addScopes("https://management.azure.com/.default")
-    val token = credential.getToken(context).block().getToken()
+    val token = retryTransientErrors {
+      credential.getToken(context).block().getToken()
+    }
 
     val wsmUrl =
       s"$workspaceManagerUrl/api/workspaces/v1/$workspaceId/resources/controlled/azure/storageContainer/$containerResourceId/getSasToken"
