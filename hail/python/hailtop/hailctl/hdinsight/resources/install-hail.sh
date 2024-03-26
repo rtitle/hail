@@ -24,8 +24,8 @@ python3 -m ipykernel install
 #curl -LO $spark_monitor_gs
 python3 -m pip install sparkmonitor widgetsnbextension
 #/usr/bin/anaconda/bin/jupyter serverextension enable --user --py sparkmonitor
-/usr/bin/anaconda/bin/jupyter nbextension install --user --py sparkmonitor
-/usr/bin/anaconda/bin/jupyter nbextension enable --user --py sparkmonitor
+#/usr/bin/anaconda/bin/jupyter nbextension install --user --py sparkmonitor
+#/usr/bin/anaconda/bin/jupyter nbextension enable --user --py sparkmonitor
 /usr/bin/anaconda/bin/jupyter nbextension enable --user --py widgetsnbextension
 mkdir -p /home/spark/.ipython/profile_default
 echo "c.InteractiveShellApp.extensions.append('sparkmonitor.kernelextension')" \
