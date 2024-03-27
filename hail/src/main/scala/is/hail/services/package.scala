@@ -179,11 +179,7 @@ package object services {
       case e: CredentialUnavailableException =>
         true
       case e =>
-        log.info(s"XXX exception: $e")
         val cause = e.getCause
-        log.info(s"XXX cause: $cause")
-        val st = ExceptionUtils.getStackTrace(e)
-        log.info(s"XXX stack trace: $st")
         cause != null && isTransientError(cause)
     }
   }
