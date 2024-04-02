@@ -224,6 +224,7 @@ class AzureStorageFS(val credentialsJSON: Option[String] = None) extends FS {
   }
 
   def openNoCompression(url: URL): SeekableDataInputStream = handlePublicAccessError(url) {
+    log.info(s"XXX trying to open blob ${url}")
     val blobSize = getBlobClient(url).getProperties.getBlobSize
 
     val is: SeekableInputStream = new FSSeekableInputStream {
@@ -305,13 +306,8 @@ class AzureStorageFS(val credentialsJSON: Option[String] = None) extends FS {
       override def close(): Unit = {
         if (!closed) {
           flush()
-          try {
-            blobOutputStream.flush()
-            blobOutputStream.close()
-          } catch {
-            case e => 
-              log.error(s"XXX Got execption closing stream: $e")
-          }
+          blobOutputStream.flush()
+          blobOutputStream.close()
           closed = true
         }
       }
