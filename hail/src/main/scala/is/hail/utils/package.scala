@@ -660,15 +660,22 @@ package object utils
 
   def using[R <: AutoCloseable, T](r: R)(consume: (R) => T): T = {
     var caught = false
-    try
+    try {
+      log.info(s"XXX consuming in using()")
       consume(r)
+    }
     catch {
       case original: Exception =>
+        log.info(s"XXX caught exception in using(): ${original.getMessage} Trying to close...")
+        log.info(s"XXX stack trace: ${org.apache.commons.lang3.exception.ExceptionUtils.getStackTrace(original)}")
         caught = true
-        try
+        try {
           r.close()
+          log.info("XXX successfully closed!")
+        }
         catch {
           case duringClose: Exception =>
+            log.info(s"XXX caught exception during close! ${duringClose.getMessage}")
             if (original == duringClose) {
               log.info(
                 s"""The exact same exception object, $original, was thrown by both
@@ -681,10 +688,12 @@ package object utils
             }
         }
         throw original
-    } finally
+    } finally {
+      log.info(s"XXX in using finally. caught = $caught")
       if (!caught) {
         r.close()
       }
+    }
   }
 
   def singletonElement[T](it: Iterator[T]): T = {

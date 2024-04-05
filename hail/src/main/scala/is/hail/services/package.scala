@@ -132,6 +132,8 @@ package object services {
       case e: ClientResponseException
           if RETRYABLE_HTTP_STATUS_CODES.contains(e.status) =>
         true
+      case e: ClientResponseException if e.getMessage.contains("There are no listeners connected for the endpoint") =>
+        true
       case e: GoogleJsonResponseException
           if RETRYABLE_HTTP_STATUS_CODES.contains(e.getStatusCode()) =>
         true
@@ -192,6 +194,7 @@ package object services {
       catch {
         case e: Exception =>
           tries += 1
+          log.info(s"XXX in retry loop, try $tries. Got error ${e.getMessage}")
           val delay = delayMsForTry(tries)
           if (tries <= 5 && isLimitedRetriesError(e)) {
             log.warn(

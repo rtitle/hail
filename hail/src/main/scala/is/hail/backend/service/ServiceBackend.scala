@@ -266,6 +266,7 @@ class ServiceBackend(
   }
 
   private[this] def readResult(root: String, i: Int): Array[Byte] = {
+    //log.info(s"XXX in readResult(): trying to read file $root/result.$i")
     val bytes = fs.readNoCompression(s"$root/result.$i")
     if (bytes(0) != 0) {
       bytes.slice(1, bytes.length)

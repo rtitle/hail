@@ -205,20 +205,61 @@ object Worker {
     timer.end("executeFunction")
     timer.start("writeOutputs")
 
+    log.info(s"XXX result is: $result")
+    if (result.isLeft) {
+      log.info("XXX I really shoud be throwing an exception right about now...")
+    } else {
+      result.right.map { r => 
+        log.info(s"XXX result bytes is ${new String(r)}")
+      }
+    }
+
     retryTransientErrors {
       write(s"$root/result.$i") { dos =>
         result match {
           case Right(bytes) =>
+            log.info(s"XXX writing success to file $root/result.$i")
             dos.writeBoolean(true)
             dos.write(bytes)
+            log.info(s"XXX done writing success to file $root/result.$i")
           case Left(throwableWhileExecutingUserCode) =>
             val (shortMessage, expandedMessage, errorId) =
               handleForPython(throwableWhileExecutingUserCode)
+            log.info(s"XXX writing error to file: $shortMessage. Exception: $throwableWhileExecutingUserCode")
             dos.writeBoolean(false)
             writeString(dos, shortMessage)
             writeString(dos, expandedMessage)
             dos.writeInt(errorId)
         }
+      }
+
+      val bs = fs.readNoCompression(s"$root/result.$i")
+      val s = new String(bs)
+      log.info(s"XXX result file that was written is ${s}")
+      if (s.contains("Faulted stream due to underlying sink write failure") || s.contains("IOException")) {
+        log.info(s"XXX deleting file $root/result.$i and retrying")
+        fs.delete(s"$root/result.$i", false)
+        throw new IllegalStateException("Faulted stream due to underlying sink write failure")
+      }
+
+      log.info("XXX sleeping 30s")
+      Thread.sleep(30000)
+
+      try {
+        log.info("XXX reading result file after 30s")
+        val bs = fs.readNoCompression(s"$root/result.$i")
+        val s = new String(bs)
+        log.info(s"XXX AFTER 30s result file that was written is ${s}")
+        
+        if (s.contains("Faulted stream due to underlying sink write failure") || s.contains("IOException")) {
+          log.info(s"XXX deleting file $root/result.$i and retrying")
+          fs.delete(s"$root/result.$i", false)
+          throw new IllegalStateException("Faulted stream due to underlying sink write failure")
+        }
+      } catch {
+        case e: Exception =>
+          log.info(s"XXX got exception in check after sleep: ${e.getMessage}")
+          throw new IllegalStateException("Faulted stream due to underlying sink write failure")
       }
     }
 

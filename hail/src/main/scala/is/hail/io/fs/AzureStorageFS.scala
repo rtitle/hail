@@ -272,7 +272,13 @@ class AzureStorageFS(val credentialsJSON: Option[String] = None) extends FS {
 
   override def readNoCompression(url: URL): Array[Byte] = handlePublicAccessError(url) {
     val client = getBlobClient(url)
-    val size = client.getProperties.getBlobSize
+    val size = try {
+      client.getProperties.getBlobSize
+    } catch {
+      case e: Exception =>
+        log.info(s"XXX got execption ${e.getMessage} when trying to read blob ${url}")
+        throw e
+    }
     if (size < 2 * 1024 * 1024 * 1024) { // https://learn.microsoft.com/en-us/java/api/com.azure.storage.blob.specialized.blobclientbase?view=azure-java-stable#com-azure-storage-blob-specialized-blobclientbase-downloadcontent()
       retryTransientErrors {
         client.downloadContent().toBytes()
@@ -305,10 +311,20 @@ class AzureStorageFS(val credentialsJSON: Option[String] = None) extends FS {
 
       override def close(): Unit = {
         if (!closed) {
-          flush()
-          blobOutputStream.flush()
-          blobOutputStream.close()
-          closed = true
+          try {
+            log.info("XXX flushing")
+            flush()
+            log.info("XXX flushing blobOutputStream")
+            blobOutputStream.flush()
+            log.info("XXX closing blobOutputStream")
+            blobOutputStream.close()
+            closed = true
+          } catch {
+            case e: Exception =>
+              log.info(s"XXX caught exception in close(): ${e.getMessage}")
+              log.info(s"XXX stack trace in close(): ${org.apache.commons.lang3.exception.ExceptionUtils.getStackTrace(e)}")
+              throw e
+          }
         }
       }
     }
