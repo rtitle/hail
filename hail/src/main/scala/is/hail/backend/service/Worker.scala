@@ -209,7 +209,7 @@ object Worker {
     if (result.isLeft) {
       log.info("XXX I really shoud be throwing an exception right about now...")
     } else {
-      result.right.map { r => 
+      result.right.map { r =>
         log.info(s"XXX result bytes is ${new String(r)}")
       }
     }
@@ -233,34 +233,34 @@ object Worker {
         }
       }
 
-      val bs = fs.readNoCompression(s"$root/result.$i")
-      val s = new String(bs)
-      log.info(s"XXX result file that was written is ${s}")
-      if (s.contains("Faulted stream due to underlying sink write failure") || s.contains("IOException")) {
-        log.info(s"XXX deleting file $root/result.$i and retrying")
-        fs.delete(s"$root/result.$i", false)
-        throw new IllegalStateException("Faulted stream due to underlying sink write failure")
-      }
-
-      log.info("XXX sleeping 30s")
-      Thread.sleep(30000)
-
-      try {
-        log.info("XXX reading result file after 30s")
-        val bs = fs.readNoCompression(s"$root/result.$i")
-        val s = new String(bs)
-        log.info(s"XXX AFTER 30s result file that was written is ${s}")
-        
-        if (s.contains("Faulted stream due to underlying sink write failure") || s.contains("IOException")) {
-          log.info(s"XXX deleting file $root/result.$i and retrying")
-          fs.delete(s"$root/result.$i", false)
-          throw new IllegalStateException("Faulted stream due to underlying sink write failure")
-        }
-      } catch {
-        case e: Exception =>
-          log.info(s"XXX got exception in check after sleep: ${e.getMessage}")
-          throw new IllegalStateException("Faulted stream due to underlying sink write failure")
-      }
+//      val bs = fs.readNoCompression(s"$root/result.$i")
+//      val s = new String(bs)
+//      log.info(s"XXX result file that was written is ${s}")
+//      if (s.contains("Faulted stream due to underlying sink write failure") || s.contains("IOException")) {
+//        log.info(s"XXX deleting file $root/result.$i and retrying")
+//        fs.delete(s"$root/result.$i", false)
+//        throw new IllegalStateException("Faulted stream due to underlying sink write failure")
+//      }
+//
+//      log.info("XXX sleeping 30s")
+//      Thread.sleep(30000)
+//
+//      try {
+//        log.info("XXX reading result file after 30s")
+//        val bs = fs.readNoCompression(s"$root/result.$i")
+//        val s = new String(bs)
+//        log.info(s"XXX AFTER 30s result file that was written is ${s}")
+//
+//        if (s.contains("Faulted stream due to underlying sink write failure") || s.contains("IOException")) {
+//          log.info(s"XXX deleting file $root/result.$i and retrying")
+//          fs.delete(s"$root/result.$i", false)
+//          throw new IllegalStateException("Faulted stream due to underlying sink write failure")
+//        }
+//      } catch {
+//        case e: Exception =>
+//          log.info(s"XXX got exception in check after sleep: ${e.getMessage}")
+//          throw new IllegalStateException("Faulted stream due to underlying sink write failure")
+//      }
     }
 
     timer.end("writeOutputs")

@@ -4,26 +4,18 @@ import is.hail.io.fs.FSUtil.dropTrailingSlash
 import is.hail.services.retryTransientErrors
 import is.hail.shadedazure.com.azure.core.credential.AzureSasCredential
 import is.hail.shadedazure.com.azure.core.util.HttpClientOptions
-import is.hail.shadedazure.com.azure.identity.{
-  ClientSecretCredentialBuilder, DefaultAzureCredentialBuilder,
-}
-import is.hail.shadedazure.com.azure.storage.blob.{
-  BlobClient, BlobContainerClient, BlobServiceClient, BlobServiceClientBuilder,
-}
-import is.hail.shadedazure.com.azure.storage.blob.models.{
-  BlobItem, BlobRange, BlobStorageException, ListBlobsOptions,
-}
+import is.hail.shadedazure.com.azure.identity.{ClientSecretCredentialBuilder, DefaultAzureCredentialBuilder}
+import is.hail.shadedazure.com.azure.storage.blob.{BlobClient, BlobContainerClient, BlobServiceClient, BlobServiceClientBuilder}
+import is.hail.shadedazure.com.azure.storage.blob.models.{BlobItem, BlobRange, BlobStorageException, ListBlobsOptions}
 import is.hail.shadedazure.com.azure.storage.blob.specialized.BlockBlobClient
 import is.hail.utils._
 
 import scala.collection.JavaConverters._
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
-
-import java.io.{ByteArrayOutputStream, FileNotFoundException, OutputStream}
+import java.io.{ByteArrayInputStream, ByteArrayOutputStream, FileNotFoundException, OutputStream}
 import java.nio.file.Paths
 import java.time.Duration
-
 import org.json4s.Formats
 import org.json4s.jackson.JsonMethods
 
@@ -297,13 +289,19 @@ class AzureStorageFS(val credentialsJSON: Option[String] = None) extends FS {
 
     val os: PositionedOutputStream = new FSPositionedOutputStream(4 * 1024 * 1024) {
       private[this] val client: BlockBlobClient = blockBlobClient
-      private[this] val blobOutputStream = client.getBlobOutputStream(true)
+//      private[this] val blobOutputStream = client.getBlobOutputStream(true)
 
       override def flush(): Unit = {
         bb.flip()
 
         if (bb.limit() > 0) {
-          blobOutputStream.write(bb.array(), 0, bb.limit())
+//          blobOutputStream.write(bb.array(), 0, bb.limit())
+          try {
+            client.upload(new ByteArrayInputStream(bb.array().slice(0, bb.limit())), bb.limit())
+          } catch {
+            case e: BlobStorageException if e.getStatusCode == 409 =>
+              log.info(s"XXX got blob 409, not erroring. Message: ${e.getMessage}")
+          }
         }
 
         bb.clear()
@@ -314,10 +312,10 @@ class AzureStorageFS(val credentialsJSON: Option[String] = None) extends FS {
           try {
             log.info("XXX flushing")
             flush()
-            log.info("XXX flushing blobOutputStream")
-            blobOutputStream.flush()
-            log.info("XXX closing blobOutputStream")
-            blobOutputStream.close()
+//            log.info("XXX flushing blobOutputStream")
+//            blobOutputStream.flush()
+//            log.info("XXX closing blobOutputStream")
+//            blobOutputStream.close()
             closed = true
           } catch {
             case e: Exception =>

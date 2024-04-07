@@ -315,7 +315,7 @@ typer==0.12.1
     # via
     #   -c hail/hail/python/hailtop/pinned-requirements.txt
     #   -r hail/hail/python/hailtop/requirements.txt
-typing-extensions==4.10.0
+typing-extensions==4.11.0
     # via
     #   -c hail/hail/python/hailtop/pinned-requirements.txt
     #   azure-core

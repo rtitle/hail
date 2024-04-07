@@ -305,7 +305,7 @@ packaging==24.0
     #   sphinx
 pandocfilters==1.5.1
     # via nbconvert
-parso==0.8.3
+parso==0.8.4
     # via jedi
 parsy==1.1.0
     # via curlylint
@@ -550,7 +550,7 @@ types-urllib3==1.26.25.14
     # via
     #   -r hail/hail/python/dev/requirements.txt
     #   types-requests
-typing-extensions==4.10.0
+typing-extensions==4.11.0
     # via
     #   -c hail/hail/python/dev/../pinned-requirements.txt
     #   anyio
