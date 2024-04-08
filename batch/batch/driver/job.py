@@ -582,7 +582,7 @@ async def schedule_job(app, record, instance):
         await client_session.post(
             f'http://{instance.ip_address}:5000/api/v1alpha/batches/jobs/create',
             json=body,
-            timeout=aiohttp.ClientTimeout(total=2),
+            timeout=aiohttp.ClientTimeout(total=60),
         )
         await instance.mark_healthy()
     except aiohttp.ClientResponseError as e:

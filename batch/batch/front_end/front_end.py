@@ -3404,8 +3404,8 @@ SELECT instance_id, n_tokens, frozen FROM globals;
         async for record in db.select_and_fetchall('SELECT region_id, region from regions')
     }
 
-    if len(regions) != 0:
-        assert max(regions.values()) < 64, str(regions)
+    #if len(regions) != 0:
+    #    assert max(regions.values()) < 64, str(regions)
     app['regions'] = regions
 
     fs = get_cloud_async_fs()

@@ -72,6 +72,9 @@ class DeployConfig:
 
     def with_location(self, location):
         return DeployConfig(location, self._default_namespace, self._domain, self._base_path)
+    
+    def with_domain(self, domain):
+        return DeployConfig(self._location, self._default_namespace, domain, self._base_path)
 
     def default_namespace(self):
         return self._default_namespace

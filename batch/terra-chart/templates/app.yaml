@@ -267,3 +267,19 @@ spec:
       targetPort: 8080
   selector:
     app: batch
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: batch-lb
+  annotations:
+    service.beta.kubernetes.io/azure-load-balancer-internal: "true"
+spec:
+  type: LoadBalancer
+  ports:
+    - name: https
+      port: 443
+      protocol: TCP
+      targetPort: 8080
+  selector:
+    app: batch

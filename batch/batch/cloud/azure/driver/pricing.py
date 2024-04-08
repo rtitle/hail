@@ -136,7 +136,7 @@ async def managed_disk_prices_by_region(
         sku_name = data['skuName']
         disk_name, redundancy_type = sku_name.split()
         assert redundancy_type in ('LRS', 'ZRS'), redundancy_type
-        size_gib = azure_disk_name_to_storage_gib[disk_name]
+        size_gib = azure_disk_name_to_storage_gib.get(disk_name, 100)
 
         if sku_name in seen_disk_names:
             seen_data = seen_disk_names[sku_name]

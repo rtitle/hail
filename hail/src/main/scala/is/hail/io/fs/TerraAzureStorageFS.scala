@@ -1,5 +1,6 @@
 package is.hail.io.fs
 
+import is.hail.services._
 import is.hail.shadedazure.com.azure.core.credential.TokenRequestContext
 import is.hail.shadedazure.com.azure.identity.{
   DefaultAzureCredential, DefaultAzureCredentialBuilder,
@@ -9,6 +10,7 @@ import is.hail.utils._
 
 import scala.collection.mutable
 
+import org.apache.http.client.config.RequestConfig
 import org.apache.http.client.methods.HttpPost
 import org.apache.http.client.utils.URIBuilder
 import org.apache.http.impl.client.HttpClients
@@ -25,8 +27,16 @@ object TerraAzureStorageFS {
 class TerraAzureStorageFS extends AzureStorageFS() {
   import TerraAzureStorageFS.{log, TEN_MINUTES_IN_MS}
 
-  private[this] val httpClient = HttpClients.custom().build()
+  private[this] val timeout = 30
+  private[this] val requestConfig = RequestConfig.custom()
+    .setConnectTimeout(timeout * 1000)
+    .setSocketTimeout(timeout * 1000)
+    .build()
+  private[this] val httpClient = HttpClients.custom()
+    .setDefaultRequestConfig(requestConfig)
+    .build()
   private[this] val sasTokenCache = mutable.Map[(String, String), (URL, Long)]()
+
 
   private[this] val workspaceManagerUrl = sys.env("WORKSPACE_MANAGER_URL")
   private[this] val workspaceId = sys.env("WORKSPACE_ID")
@@ -63,7 +73,9 @@ class TerraAzureStorageFS extends AzureStorageFS() {
 
     val context = new TokenRequestContext()
     context.addScopes("https://management.azure.com/.default")
-    val token = credential.getToken(context).block().getToken()
+    val token = retryTransientErrors {
+      credential.getToken(context).block().getToken()
+    }
 
     val wsmUrl =
       s"$workspaceManagerUrl/api/workspaces/v1/$workspaceId/resources/controlled/azure/storageContainer/$containerResourceId/getSasToken"
@@ -79,6 +91,16 @@ class TerraAzureStorageFS extends AzureStorageFS() {
     req.setURI(uri)
 
     val sasToken = using(httpClient.execute(req)) { resp =>
+      val statusCode = resp.getStatusLine.getStatusCode
+      if (statusCode < 200 || statusCode >= 300) {
+        val entity = resp.getEntity
+        val message =
+          if (entity != null)
+            EntityUtils.toString(entity)
+          else
+            null
+        throw new ClientResponseException(statusCode, message)
+      }
       val json = JsonMethods.parse(new String(EntityUtils.toString(resp.getEntity)))
       log.info(s"Created sas token client for $containerResourceId")
       (json \ "token").extract[String]

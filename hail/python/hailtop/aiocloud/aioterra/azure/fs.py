@@ -47,7 +47,7 @@ class TerraAzureAsyncFS(AzureAsyncFS):
 
         assert WORKSPACE_STORAGE_CONTAINER_ID is not None
         token = await self._terra_client.get_storage_container_sas_token(
-            WORKSPACE_STORAGE_CONTAINER_ID, url.path, expires_after=an_hour_in_seconds
+            WORKSPACE_STORAGE_CONTAINER_ID, expires_after=an_hour_in_seconds
         )
 
         return url.with_query(token), expiration

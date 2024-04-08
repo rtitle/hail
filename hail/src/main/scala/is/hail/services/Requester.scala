@@ -7,7 +7,6 @@ import is.hail.shadedazure.com.azure.identity.{
 import is.hail.utils._
 
 import java.io.InputStream
-import scala.collection.JavaConverters._
 
 import com.google.auth.oauth2.GoogleCredentials
 import org.apache.commons.io.IOUtils

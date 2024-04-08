@@ -2464,6 +2464,8 @@ class JVMContainer:
         command = [
             'java',
             f'-Xmx{heap_memory_mib}M',
+            f'-Dsun.net.spi.nameservice.nameservers=127.0.0.53',
+            f'-Dsun.net.spi.nameservice.provider.1=dns,sun',
             '-cp',
             f'/jvm-entryway/jvm-entryway.jar:{JVM.SPARK_HOME}/jars/*',
             'is.hail.JVMEntryway',

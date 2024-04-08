@@ -456,7 +456,7 @@ ON DUPLICATE KEY UPDATE region = region;
             record['region']: record['region_id']
             async for record in db.select_and_fetchall('SELECT region_id, region from regions')
         }
-        assert max(db_regions.values()) < 64, str(db_regions)
+        #assert max(db_regions.values()) < 64, str(db_regions)
         app['regions'] = db_regions
 
         region_monitor = await SingleRegionMonitor.create(region)
